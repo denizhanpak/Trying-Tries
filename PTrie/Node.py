@@ -10,11 +10,14 @@ class Node:
     def reinforce(self, reinforcement_rate):
         self.weight *= reinforcement_rate
 
-    def __str__(self, level=0):
+    def print_as_graph(self, level=0):
         ret = "\t"*level+self.char+"\n"
         for child in self.children.values():
             ret += child.__str__(level+1)
         return ret
+
+    def __str__(self):
+        return self.char
 
     def __repr__(self):
         return '<tree node representation>'
