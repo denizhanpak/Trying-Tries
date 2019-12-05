@@ -3,11 +3,13 @@ class Node:
         self.char = char
         self.weight = weight
         self.children = dict()
+        self.count = 0
     
     def add_child (self, child):
         self.children[child.char] = child
 
     def reinforce(self, reinforcement_rate):
+        self.count += 1
         self.weight *= reinforcement_rate
 
     def print_as_graph(self, level=0):
@@ -21,5 +23,3 @@ class Node:
 
     def __repr__(self):
         return '<tree node representation>'
-    
-

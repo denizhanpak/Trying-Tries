@@ -19,7 +19,7 @@ def deterministic_function(number):
 builtin = {"simple":probability_function_simple, "sigmoid":probability_function_sigmoid, 
         "sigmoid_translated":probability_function_sigmoid_translate, "deterministic":deterministic_function}
 
-class PTrie:
+class Trie:
     def __init__(self, learning_rate, reinforcement_rate, probability_function):
         self.learning_rate = learning_rate
         self.reinforcement_rate = reinforcement_rate
@@ -29,9 +29,9 @@ class PTrie:
         elif callable(probability_function):
             self.probability_function = probability_function
         else:
-            print("Error: Probability function must be a string from the list or a valid function")
+            print("Error: Probability function must be a string from the list or a valid function f:Z->[0,1]")
 
-        self.root = Node("ROOT", None)
+        self.root = Node.Node("ROOT", None)
 
     def run(self, corpus):
         context = self.root
@@ -52,7 +52,7 @@ class PTrie:
 
             #Add new child node to context
             if character not in context.children:
-                node = Node(character, learning)
+                node = Node.Node(character, learning)
                 context.add_child(node)
 
             #Reinforce weights from context to child
@@ -75,31 +75,41 @@ class PTrie:
     def __str__(self):
         return print_as_graph(self.root)
 
+    #This function will reduce the size of the tree by removing low probability connections
     def prune(self, threshold):
         return
 
+    #Returns a dictionary which has all words and their likelihood measures implemented using DFS
     def list(self):
-        to_add = parent.children.values()
-        end_points = []
-        for child in to_add:
-            end_points.append(nx.descendants(self.network, child))
-        return end_points
+        #All morphemes start with children of roots
+        first_letters = self.root.children.values()
+        all_strings = []
 
-    def convert_to_network(self):
-        parent = self.root
-        to_add = deque(parent.children.values())
-        parents = deque([self.root] * len(to_add)])
-        self.network = nx.DiGraph()
-        self.network.add_node(parent)
+        for starting_letter in first_letters:
+            all_strings.append(self.get_morphemes(starting_letter))
 
-        while len(to_add) > 0:
-            current = to_add.popleft()
-            parent = parents.popleft()
-            self.network.add_node(current)
-            self.add_edge(parent, current, weight = current.weight)
+        return all_strings
 
-            for child in current.children.values():
-                to_add.append(child)
-                parents.append(current)
+    #Returns all possible morpheme children for a given node in the tree
+    def get_morphemes(self, node, previous_letters):
+
+        if len(node.children) == 0:
+            return ([node.char], [node.weight])
+        
+        possible_morphemes = []
+        possible_weights = []
+
+        for child in node.children:
+            child_node = node.children[child]
+            successive_letters, successive_weights = get_morphemes(child_node, current_morphem)
             
-            return self.network
+            for morpheme, weight in zip(successive_letters, successive_weights):
+                possible_morphemes.append(self.char + morpheme)
+                possible_weights.append(weight * node.weight)
+
+        return (possible_morphemes, possible_weights)
+
+corpus = "manly man mans man manning man"
+trie = Trie(1,1,"simple")
+print(trie.run(corpus))
+print(trie.list())
