@@ -10,7 +10,7 @@ class Node:
 
     def reinforce(self, reinforcement_rate):
         self.count += 1
-        self.weight *= reinforcement_rate
+        self.weight += reinforcement_rate
 
     def print_as_graph(self, level=0):
         ret = "\t"*level+self.char+"\n"

@@ -1,0 +1,216 @@
+%
+% File acl2018.tex
+%
+%% Based on the style files for ACL-2017, with some changes, which were, in turn,
+%% Based on the style files for ACL-2015, with some improvements
+%%  taken from the NAACL-2016 style
+%% Based on the style files for ACL-2014, which were, in turn,
+%% based on ACL-2013, ACL-2012, ACL-2011, ACL-2010, ACL-IJCNLP-2009,
+%% EACL-2009, IJCNLP-2008...
+%% Based on the style files for EACL 2006 by 
+%%e.agirre@ehu.es or Sergi.Balari@uab.es
+%% and that of ACL 08 by Joakim Nivre and Noah Smith
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[hyperref]{acl2018}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
+
+\usepackage{url}
+
+
+\usepackage{url}
+
+\aclfinalcopy % Uncomment this line for the final submission
+%\def\aclpaperid{***} %  Enter the acl Paper ID here
+
+%\setlength\titlebox{5cm}
+% You can expand the titlebox if you need extra space
+% to show all the authors. Please do not make the titlebox
+% smaller than 5cm (the original size); we will check this
+% in the camera-ready version and ask you to change it back.
+
+\newcommand\BibTeX{B{\sc ib}\TeX}
+
+\title{Trying Tries: Stochastic Morpheme Segmentation}
+
+\author{Denizhan Pak \\
+  Dept. of Linguistics - Indiana University \\
+  {\tt denpak@iu.edu} \\}
+
+\date{}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+        There are many reasons to apply morphological analysis for complex 
+        linguistic tasks. The application of computational tools to
+        corpus data is heavily improved by increased information. 
+        Morphological analysis can provide novel information that can 
+        benefit downstream tasks. Semantics and dependencies can also be
+        captured more easily given more morphological information.
+        To determine the list of morphemes in a language however is a time
+        consuming task and an unsupervised algorithm could relieve quite a few
+        researchers and grad students. In this paper we propose a 
+        potentially useful unsupervised machine learning to accomplish 
+        just this task.
+\end{abstract}
+
+\section{Introduction}
+
+    The process of finding meaningful sub-sequences in a larger sequential 
+    dataset is a difficult and important task. This is especially true in 
+    linguistics. Morphology is a crucial element of any coherent study of 
+    language. Being able to identify morphemes inside linguistic data is 
+    therefore crucial. Since it is such a core linguistic concept many 
+    morphologies have already been mapped out and gold standards have been
+    generated for languages such as Finnish and English. This task however 
+    becomes much hard for languages which don't have clear word boundaries 
+    and which have don't have large amounts of data available.\\
+    We propose using a markovian model inspired the construction of markov
+    chains in other algorithms such Metropolis Monte Carlo Markov chains.
+    The algorithm will be capable of generating a markov chain which can be
+    used to derive the morphemes in a language as well as used to parse a
+    corpus into a constituent morpheme sequence. Since the algorithm is 
+    designed in terms of sequences and sub-sequences it could be used in other
+    contexts as well ranging from word boundary detection to binary sequence 
+    parsing.
+
+\section{Related Work}
+Although much morphological data has already been generated using traditional 
+linguistic tools. The emergence of computational linguistics has included the
+introduction of many other morphological parsing algorithms into the 
+literature. Many of these algorithms involve the supervised learning however
+unsupervised methods have also been developed. This methods have varying 
+degrees of complexity and have applied a variety of different techniques. 
+Ranging from expectation maximization to Bayesian inferencea.\\
+Including general morphological segmentation there have also been developments
+in recognition specialized morphemes based on occurrence location such as 
+suffix-segmentation. Much of the work being done has been focused on languages
+which strong morphologies Turkish, Finnish, and because of the availability of
+data English and Chinese. 
+
+\section{Data}
+The data for this project comes from a variety of sources. For corpus data
+and comparison to other unsupervised algorithms the model will be tested 
+against other unsupervised algorithms on the publicly available wikimedia
+data for Turkish, English, Finnish, Chinese. This dataset has been cleaned of 
+non-lexical content.In addition the generated morpheme lists will be 
+compared against the gold standard dataset generated for English and Finnish.
+ 
+\section{Method}
+Morpheme parsing is an important task from a computational linguistics 
+standpoint as it provides a way to denote meaningful units within a corpus
+in turn this allows us to apply the many tools which use these units using the
+lowest components which still provide information. We propose that the 
+semantic importance of a morpheme can be determined by its relative frequency.
+More explicitly if we are able to identify substrings which occur as a 
+cohesive unit with a high relative frequency then those units correspond to 
+morphemes or some other sort of semantic unit. The algorithm below provides
+an unsupervised method through which such semantic units can be distinguished.The algorithm uses a data structure similar to a "trie" however edges between 
+nodes are assigned a transition probability, we shall call this a "p-trie." 
+The algorithm requires two user determined hyper parameters: 
+$0 < \lambda < 1 < \rho$. Where $\rho$ is a reinforcement rate and 
+$\lambda$ is a learning rate.
+\begin{algorithm}
+\caption{Build Trie}
+\begin{algorithmic}
+\REQUIRE $0 < \lambda < 1 < \rho$
+\STATE $pointer \leftarrow root$
+\FOR{$char$ in $corpus$}
+\IF{$pointer ==  root$}
+\STATE $p_1 = 1,p_2=1$
+\ELSE
+\STATE $p_1 = \lambda, p_2 = \rho$
+\ENDIF
+\IF{$char$ in $pointer\to children$}
+\STATE $edge_{pointer\to char} \leftarrow edge_{pointer\to char} * \rho$
+\ELSE
+\STATE $edge_{pointer\to char} \leftarrow \lambda$
+\STATE $pointer\to children\ \textbf{append}\ char$
+\ENDIF
+\STATE $r \leftarrow \textbf{random number(0,1)}$
+\IF{$r > edge_{pointer\to char}$}
+\STATE $pointer \leftarrow root$
+\ELSE
+\STATE $pointer \leftarrow char_{pointer}$
+\ENDIF
+\ENDFOR
+\STATE $\textbf{return}\ root$
+\end{algorithmic}
+\end{algorithm}
+At the end of the algorithm the function will have returned a $p-trie$ with
+the estimated probability values. Once we have a $p-trie$ it is possible to
+extract potential morphemes as sequences of nodes that start at the root. We
+can even assign a certainty per morpheme which is the product of the weights 
+along its edges. If the corpus is not large enough an easy approach to 
+improving access to data would simply be to randomize the words in the corpus
+and run the algorithm through it again starting with the existing $p-trie$.
+
+Below is the flow diagram to explain the functioning of the algorithm.
+% Define block styles
+\tikzstyle{decision} = [diamond, draw, fill=blue!20,
+    text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
+\tikzstyle{block} = [rectangle, draw, fill=blue!20,
+    text width=5em, text centered, rounded corners, minimum height=4em]
+\tikzstyle{line} = [draw, -latex']
+\tikzstyle{cloud} = [draw, ellipse,fill=red!20, node distance=3cm,
+    minimum height=2em]
+
+\begin{tikzpicture}[node distance = 2cm, auto]
+    % Place nodes
+    \node [block] (init) {initialize trie};
+    \node [cloud, right of=init] (system) {corpus};
+    \node [block, below of=init] (root) {set pointer to root};
+    \node [block, below of=root] (terbed) {get input value $\to in$};
+    \node [decision, below of=terbed] (pointer) {is pointer set to root?};
+    \node [block, left of=pointer, node distance=3cm] (update) 
+            {set $p_1 = p_2 = 1$};
+    \node [block, right of=pointer, node distance=3.3cm] (child) 
+            {set $p_1 = \lambda$ and $p_2 = \rho$};
+    \node [decision, below of=pointer, node distance=3.3cm] (expected) {is 
+            $in$ a child node of pointer?};
+    \node [block,below of=expected, right of=expected, node distance=2.33cm] 
+            (notchild) {add $in$ as child with transition probability $p_1$};
+    \node [block, below of=expected, left of=expected, node distance=2.33cm] 
+            (ischild) {multiply transition probability by $p_2$};
+    
+    \node [block, below of=expected, node distance=6cm] (transition) 
+            {set pointer (probabilistically) based on transition 
+            probability, $p_3$};
+    \node [block, below of=transition, node distance=3.3cm] (input) 
+            {set pointer to $in$};
+    % Draw edges
+    \path [line] (init) -- (root);
+    \path [line] (root) -- (terbed);
+    \path [line] (terbed) -- (pointer);
+    \path [line] (pointer) -| node [near start] {yes} (update);
+    \path [line] (pointer) -- node [near start] {no} (child);
+    \path [line] (update) |- (expected);
+    \path [line] (child) |- (expected);
+    \path [line] (expected) -- node  {yes} (ischild);
+    \path [line] (expected) -- node  {no} (notchild);
+    \path [line,dashed] (system) |- (terbed);
+    \path [line] (ischild) -- (transition);
+    \path [line] (notchild) -- (transition);
+    \path [line, dashed] (transition) -- node {$p_3$} (input);
+    \path [line, dashed] (transition) -|++  (-5,13) node [near start]{$1-p_3$}|- (root);
+    \path [line] (input) -|++  (-5,13) |- (terbed);
+\end{tikzpicture}
+\section{Results}
+Waiting on finishing runs and generating graphs.
+\section{Discussion}
+Waiting on Results
+\section{References}
+
+% include your own bib file like this:
+%\bibliographystyle{acl}
+%\bibliography{acl2018}
+\bibliography{acl2018}
+\bibliographystyle{acl_natbib}
+
+\end{document}

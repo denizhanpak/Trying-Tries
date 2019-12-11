@@ -10,7 +10,7 @@ def probability_function_simple(number):
 def probability_function_sigmoid(number):
     return 1/(1+math.exp(-number))
 
-def probability_function_sigmoid_translate(number, shift):
+def probability_function_sigmoid_translate(number, shift = 4):
     return 1/(1+math.exp(shift - number))
 
 def deterministic_function(number):
@@ -20,7 +20,7 @@ builtin = {"simple":probability_function_simple, "sigmoid":probability_function_
         "sigmoid_translated":probability_function_sigmoid_translate, "deterministic":deterministic_function}
 
 class Trie:
-    def __init__(self, learning_rate, reinforcement_rate, probability_function):
+    def __init__(self, probability_function, learning_rate = 1, reinforcement_rate = 1):
         self.learning_rate = learning_rate
         self.reinforcement_rate = reinforcement_rate
  
@@ -33,7 +33,7 @@ class Trie:
 
         self.root = Node.Node("ROOT", None)
 
-    def run(self, corpus):
+    def train(self, corpus):
         context = self.root
         for character in corpus:
 
@@ -69,6 +69,44 @@ class Trie:
 
         return self.root
     
+    def run(self, corpus):
+        context = self.root
+        rv = ""
+        start = True
+
+        for character in corpus:
+            #Skip non alphanumeric characters except ' for 
+            if character in " ,.;!?" or start:
+                context = self.root
+                start = False
+                rv += character
+                continue
+
+            #Definitely not part of this morpheme
+            if character not in context.children:
+                context = self.root
+                rv += ("-" + character)
+                continue
+            
+            else:
+                node = context.children[character]
+
+            #Decide whether will continue this morpheme or seperate it
+            probability = self.probability_function(node.weight)
+
+            if random.uniform(0, 1) <= probability:
+                context = node
+                rv += character
+            else:
+                if character in self.root.children: 
+                    context = self.root.children[character]
+                    rv += ("-" + character)
+                else:
+                    context = self.root
+                    rv += ("-" + character + "-")
+
+        return rv
+
     def __repr__(self):
         return '<PTrie representation>'
             
@@ -109,7 +147,3 @@ class Trie:
 
         return (possible_morphemes, possible_weights)
 
-corpus = "manly man mans man manning man"
-trie = Trie(1,1,"simple")
-print(trie.run(corpus))
-print(trie.list())
